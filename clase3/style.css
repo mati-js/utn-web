@@ -1,0 +1,85 @@
+* {
+  margin: 0rem;
+}
+
+html {
+  font-size: 10px;
+}
+
+body {
+  font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+  background-color: rgb(34, 40, 49);
+}
+
+.title {
+  color: rgb(209, 209, 209);
+  font-size: 5rem;
+  text-align: center;
+  font-weight: 600;
+  animation: title-animation 0.8s cubic-bezier(0.215, 0.610, 0.355, 1.000) both;
+}
+
+@keyframes title-animation {
+  0% {
+    letter-spacing: 1em;
+    color:rgb(214, 90, 49);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.6;
+    color:rgb(214, 90, 49);
+  }
+  100% {
+    letter-spacing: normal;
+    opacity: 1;
+  }
+}
+
+.menu {
+  margin: 2rem;
+  list-style-type: none;
+  text-align: center;
+}
+
+.menu li {
+  display: inline-block;
+}
+
+.menu a {
+  text-decoration: none;
+  color: rgb(209, 209, 209);
+  font-size: 3rem;
+  font-weight: 800;
+  padding: 2rem;
+}
+
+.menu a:hover {
+  color: rgb(214, 90, 49);
+}
+
+.container {
+  position: absolute;
+  width: 66vw;
+  left: 20%;
+  margin-left: -50px;
+  font-size: 1.5rem;
+  text-align: left;
+  color: rgb(216, 216, 216);
+}
+
+.container article a {
+  text-decoration: none;
+  font-size: 2rem;
+  font-weight: 800;
+  color: rgb(209, 209, 209);
+}
+
+.container article a:hover {
+  color: rgb(214, 90, 49);
+}
+
+.date {
+  font-size: 1.3rem;
+  text-align: end;
+  color: rgb(57, 62, 70);
+}

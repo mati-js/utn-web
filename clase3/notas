@@ -1,0 +1,21 @@
+Css:
+// Por etiqueta
+selector {
+
+}
+
+// Por clase
+.selector {
+  clave: valor;
+}
+
+// Por id
+#selector {
+
+}
+
+// !important -> Para evitar que algun estilo te pise
+
+1. ID
+2. Class
+3. Etiqueta
