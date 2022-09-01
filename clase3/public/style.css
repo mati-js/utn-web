@@ -36,12 +36,13 @@ body {
 }
 
 .menu {
-  margin: 2rem;
   list-style-type: none;
+  align-items: center;
   text-align: center;
 }
 
 .menu li {
+  width: 40%;
   display: inline-block;
 }
 

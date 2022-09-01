@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "miribarren",
     "public": "public",
     "ignore": [
       "firebase.json",
