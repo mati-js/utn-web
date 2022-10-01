@@ -1,0 +1,21 @@
+/* Formatea las imagenes en el mismo tamaño */
+.carousel-inner > .carousel-item > img {
+  width: 800px;
+  height: 700px;
+}
+
+/* Media querys para ajustar las imagenes segun la pantalla */
+@media screen and (max-width: 480px) {
+  .carousel-inner > .carousel-item > img {
+    width: 300px;
+    height: 300px;
+  }
+}
+
+/* Media querys para pantallas medianas*/
+@media screen and (max-width: 768px) {
+  .carousel-inner > .carousel-item > img {
+    width: 1rem;
+    height: 20rem;
+  }
+}
