@@ -1,0 +1,22 @@
+Lo de las clases 5 y 6:
+  * Está aplicado en el html de la clase 1 (blog)
+
+Diseño responsive:
+  Un sitio deberia verse bien en todo tipo de pantallas
+
+Mobile first:
+  Refiere a hacer el diseño de un sitio desde celular, luego tablet y 
+  por último, desktop
+
+Media Query:
+  - Breakpoints: medidas más comunes para pantallas.
+  
+  - Ejemplo:
+  @media screen and (min-with: 768px) {
+    .body {
+      background-color: black;
+    }
+  }
+
+  - Meta viewport
+  

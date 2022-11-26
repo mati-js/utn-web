@@ -1,0 +1,51 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background-color: green;
+}
+
+.caja {
+  width: 200px;
+  height: 300px;
+  margin: 20px;
+  display: inline-block;
+  border: 10px solid black;
+
+}
+
+.uno {
+  background-color: red;
+}
+
+.dos {
+  background-color: blue;
+  color: white;
+}
+
+.tres {
+  background-color: yellow;
+}
+
+.cuatro {
+  background-color: aqua;
+}
+
+.cinco {
+  background-color: pink;
+}
+
+.seis {
+  background-color: black;
+  color: white;
+}
+
+.siete {
+  background-color: gray;
+}
+
+.ocho {
+  background-color: darkblue;
+  color: white;
+}

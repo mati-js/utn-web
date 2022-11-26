@@ -6,6 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="icon" href="../icon.png">
   <link rel="stylesheet" href="../style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@300&display=swap" rel="stylesheet">
   <title>Solidity: tips & tricks</title>
 </head>
 <body>
@@ -22,28 +25,174 @@
   <section class="container">
     
     <br>
-    <article width="25%">
+    <article class="entry">
       <p>
-        &emsp;&emsp;If you are starting in coding smart-contracts for Ethereum (or any EVM-compatible blockchain)
-        you will notice that there are some restrictions when it comes to escalabity and large amounts of data.
-        Some people will say: 'Its a bad practice to do this on-chain, I can code a {insert-trending-language}'s
-        script solving this problem in 5 minutes'. And probably they are right, blockchain technology it is not
-        for everyone
+        &emsp;&emsp;Cuando estás aprendiendo a escribir smart-contracts te encontrás con muchas técnicas
+        (algunas no tan lindas) de hacer buen código. Para aclarar, hacer código prolijo para programas convencionales
+        NO es hacer buen código en blockchain. Por supuesto que suma ser prolijo. Comparto acá algunas prácticas que
+        me fueron útiles y que considero eficientes.
+      </p>
+      <h2>
+        &emsp;&emsp;Optimizar las estructuras
+      </h2>
+      <p>
+        Supongamos que estamos desarrollando un juego de carreras que están separados por clases (que define su velocidad máxima)
+         para el cual tenemos una estructura para guardar datos
+        sobre los autos que corren. El contrato podría ser algo así:
+      </p>
+      <p class="code">
+        // SPDX-License-Identifier: UNLICENSED<br>
+        pragma solidity ^0.8.16;<br>
+        <br>
+        contract RacingGame {<br>
+        &emsp;// Total amount of cars<br>
+        &emsp;uint amountOfCars;<br>
+        <br>
+        &emsp;// Every Car has an id in the list<br>
+        &emsp;mapping(uint => Car) carList;<br>
+        <br>
+        &emsp;// Fired when a car is adquired<br>
+        &emsp;event CreatedCar(address who, uint which);<br>
+        <br>
+        &emsp;// Racing car<br>
+        &emsp;struct Car {<br>
+        &emsp;&emsp;bool ableToRace;<br>
+        &emsp;&emsp;uint color;<br>
+        &emsp;&emsp;uint class;<br>
+        &emsp;&emsp;uint maxVelocity;<br>
+        &emsp;&emsp;address owner;<br>
+        &emsp;}<br>
+        <br>
+        &emsp;// Function to adquire a car that is able to race<br>
+        &emsp;function adquireCar(uint color) public {<br>
+        &emsp;&emsp;carList[amountOfCars] = Car(true, color, 1, 1 * 200, msg.sender);<br>
+        &emsp;&emsp;emit CreatedCar(msg.sender, amountOfCars);<br>
+        &emsp;&emsp;amountOfCars++;<br>
+        &emsp;}<br>
+        <br>
+        &emsp;// Function to get the data of the {carId} in the list<br>
+        &emsp;function getCarInformation(uint carId) public view returns (Car memory) {<br>
+        &emsp;&emsp;return carList[carId];<br>
+        &emsp;}<br>
+        }<br>
       </p>
       <p>
-        &emsp;&emsp;
+        Crear el primer auto costaría 180.000 unidades de gas, luego, 160.000 unidades cada uno. Esto se puede
+        mejorar sabiendo que la EVM guarda las variables en storage de a 32 bytes.
+        <br>Por ejemplo:<br>
+        &emsp;Para guardar la variable 'ableToRace' que es de tipo boolean (1 byte) se tienen que rellenar con cero los 
+        bytes hasta llegar a 32. Esto quiere decir que la EVM tiene que completar ese slot y luego guardarlo. Y eso se paga.
+      </p>
+      <h4>v1: Recortando variables</h4>
+      <p>
+      Teniendo en cuenta que como el color del auto se guarda en RGB, el máximo que puede alcanzar cada color es 255,
+      (1 byte) podemos guardar una estructura así:<br>
+      </p>
+      <p class="code">
+        // Racing car<br>
+        struct Car {<br>
+        &emsp;bool ableToRace;<br>
+        &emsp;uint8 r;<br>
+        &emsp;uint8 g;<br>
+        &emsp;uint8 b;<br>
+        &emsp;uint class;<br>
+        &emsp;uint maxVelocity;<br>
+        &emsp;address owner;<br>
+        }<br>
       </p>
       <p>
-        &emsp;&emsp; 
+      De esta manera, el primer slot queda compuesto por las primeras 4 variables y luego se rellena con ceros.
+      Almacenar esta estructura (la primera) cuesta 160.000 unidades y luego 140.000 cada una.
       </p>
+      <h4>v2: Todo puede estar en la misma variable</h4>
       <p>
-        &emsp;&emsp;
+        Tengamos en cuenta que un uint256 (32 bytes = slot entero!) puede tener hasta 76 dígitos.
+        La cúspide de la optimización de este ejemplo es pensar en que todas las variables pueden guardarse en
+        el mismo entero.<br>
+        Repasemos la cantidad de dígitos máxima que puede ocupar cada atributo del auto:
+        <ul>  
+          <li>ableToRace: 1 (0-1 = false/true)</li>
+          <li>r: 3 (0-255)</li>
+          <li>g: 3 (0-255)</li>
+          <li>b: 3 (0-255)</li>
+          <li>class: 1 (0-9)</li>
+          <li>maxVelocity: 4 (100-1800)</li>
+          <li>owner: 48</li>
+        </ul>  
+        Ahora, consideremos el valor máximo de un entero positivo (que ocupa 32 bytes = 78 dígitos):
+        <p class="code">115792089237316195423570985008687907853269984665640564039457584007913129639935</p>
+        Sabiendo esto, se puede escribir una función que reciba como parámetro lo necesario para crear un 
+        auto y los ubique de manera ordenada en el espacio de un entero. La estructura simplificada a una 
+        variable.<br>
+        Como lo único que necesitamos para crear el auto es el color, la firma + parámetros nos queda como antes:
+        <p class="code">function adquireCar(uint8 r, uint8 g, uint8 b) public</p>
+        Sólo necesitamos 64 dígitos + 1 (como el primer valor es boolean, puede ser 0 por lo que no podríamos 
+        parsearlo. Tiene que ser 1). Nos queda una función así:
+        <p class="code">
+          function packInformation(<br>
+          &emsp;bool ableToRace,<br>
+          &emsp;uint8 r,<br>
+          &emsp;uint8 g,<br>
+          &emsp;uint8 b,<br>
+          &emsp;uint class,<br>
+          &emsp;uint maxVelocity,<br>
+          &emsp;address owner<br>
+          ) public pure returns (uint stats) {<br>
+            &emsp;stats =<br>
+            &emsp;&emsp;(1 * 1e65) + <br>
+            &emsp;&emsp;((ableToRace ? 1 : 0) * 1e64) + <br>
+            &emsp;&emsp;(uint(r) * 1e61) + (uint(g) * 1e58) + (uint(b) * 1e55) + <br>
+            &emsp;&emsp;(class * 1e54) + (maxVelocity * 1e50) + uint160(owner);<br>
+          }<br>
+        </p>
+        Devuelve un entero con los datos que necesitamos almacenar, y nos alcanza un set de getters para usar los datos 
+        normalmente (tambien setters):
+        <p class="code">
+          function isAbleToRace(uint carId) public pure returns (bool);<br>
+          function getRed(uint carId) public pure returns (uint8);<br>
+          function getGreen(uint carId) public pure returns (uint8);<br>
+          function getBlue(uint carId) public pure returns (uint8);<br>
+          function getClass(uint carId) public pure returns (uint);<br>
+          function getMaxVelocity(uint carId) public pure returns (uint);<br>
+          function getOwner(uint carId) public pure returns (address);<br>
+        </p>
+        Ahora, crear un auto ahora nos cuesta 81.000 unidades de gas (el primero) y luego, 60.000 unidades.
       </p>
 
+      <h2>
+        &emsp;&emsp;Atomic Swaps
+      </h2>
+      <p>
+        &emsp;En varias situaciones, me encontré con un problema muy fácil de solucionar pensando en mecanismos 
+        de intercambio de tokens (no importa el tipo de token):
+        <h3>El asincronismo del intercambio.</h3>
+        La solución limpia y linda: no existe. No puede evitarse ni saltearse. Lamentablemente ambas partes pueden gastarse 
+        lo que ofrecen o realizar otro swap antes de completar este supuesto swap.
+      </p>
+      <p>
+        El problema en un ejemplo:<br>
+        &emsp;Supongamos un usuario Alice que tiene 100 tokens A y un usuario Bob que tiene 200 tokens B. Alice desea 
+        intercambiar 50 de sus tokens por 100 de los de Bob. <br>
+        <br>
+        El algoritmo ideal:<br>
+        <ol>
+          <li>Alice le propone el intercambio a Bob</li>
+          <li>Bob acepta la propuesta y se ponen de acuerdo para ejecutar la transferencia en el mismo segundo</li>
+          <li>Ambos reciben los tokens que buscaban</li>
+        </ol>
+        Lamentablemente, este algoritmo planteado no puede utilizarse en este mundo, debido a que tanto Alice como Bob 
+        no pueden (y gracias a los sistemas) ni tienen que confiar en el otro. Esta desconfianza entre las partes lleva a 
+        las personas a usar métodos de intercambio que ni siquiera tengan alguien en el medio que se encargue de asegurarse 
+        que las transacciones ocurran.<br>
+        Por esto es que los intercambios de tokens necesitan un smart-contract
+      </p>
+
+      <p class="date">06/09/2022</p>
     </article>
     <br>
-    <p class="date">30/08/2022</p>
+    
   </section>
   
+</form>
 </body>
 </html>
